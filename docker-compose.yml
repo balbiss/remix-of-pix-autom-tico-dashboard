@@ -18,8 +18,9 @@ services:
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
       - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
     networks:
-      - public
+      - dashboard_network
 
 networks:
-  public:
-    external: true
+  dashboard_network:
+    driver: overlay
+    attachable: true
