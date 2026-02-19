@@ -45,6 +45,20 @@ const Dashboard = () => {
         .eq('avo_id', user.id);
 
       setCounts({ level1: count1 || 0, level2: count2 || 0 });
+
+      // Check for pending plan from Landing page
+      const pendingPlan = localStorage.getItem("pending_plan");
+      if (pendingPlan) {
+        try {
+          const plan = JSON.parse(pendingPlan);
+          setSelectedPlan(plan);
+          setCheckoutOpen(true);
+          localStorage.removeItem("pending_plan"); // Clear it so it doesn't open again
+        } catch (e) {
+          console.error("Error parsing pending plan", e);
+        }
+      }
+
       setLoading(false);
     };
 

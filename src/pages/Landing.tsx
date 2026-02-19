@@ -3,12 +3,13 @@ import { Zap, CheckCircle, Shield, ArrowRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import CheckoutModal from "@/components/CheckoutModal";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 const Landing = () => {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; price: number } | null>(null);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -19,8 +20,9 @@ const Landing = () => {
   }, [searchParams]);
 
   const openCheckout = (id: string, name: string, price: number) => {
-    setSelectedPlan({ id, name, price });
-    setCheckoutOpen(true);
+    // Save selection to localStorage so we can auto-open after login
+    localStorage.setItem("pending_plan", JSON.stringify({ id, name, price }));
+    navigate("/register");
   };
 
   return (
