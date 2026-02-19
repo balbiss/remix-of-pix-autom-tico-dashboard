@@ -8,19 +8,18 @@ services:
       restart_policy:
         condition: on-failure
       labels:
-        # Traefik labels (assuming Traefik as reverse proxy)
         - "traefik.enable=true"
         - "traefik.http.routers.pixautomatico.rule=Host(`pixautomatico.inoovaweb.com.br`)"
         - "traefik.http.routers.pixautomatico.entrypoints=websecure"
         - "traefik.http.routers.pixautomatico.tls.certresolver=myresolver"
         - "traefik.http.services.pixautomatico.loadbalancer.server.port=80"
+        - "traefik.docker.network=public" # Altere se sua rede do Traefik for diferente
     environment:
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
       - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
     networks:
-      - dashboard_network
+      - public
 
 networks:
-  dashboard_network:
-    driver: overlay
-    attachable: true
+  public:
+    external: true
