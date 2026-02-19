@@ -3,6 +3,8 @@ import { Copy, Check, Clock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 interface CheckoutModalProps {
   open: boolean;
@@ -101,28 +103,31 @@ const CheckoutModal = ({ open, onOpenChange, planId, planName, planPrice }: Chec
         </div>
 
         <div className="p-5 space-y-5">
-          {/* QR Code Placeholder */}
-          <div className="bg-foreground rounded-2xl p-5 mx-auto w-48 h-48 flex items-center justify-center shadow-lg">
-            <div className="text-background text-center">
-              <div className="grid grid-cols-5 gap-1 mb-2">
-                {Array.from({ length: 25 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-5 h-5 rounded-sm ${[0, 1, 2, 4, 5, 6, 10, 12, 14, 18, 19, 20, 22, 23, 24].includes(i)
-                        ? "bg-background"
-                        : "bg-foreground"
-                      }`}
-                  />
-                ))}
+          <div className="bg-white rounded-2xl p-5 mx-auto w-48 h-48 flex items-center justify-center shadow-lg relative overflow-hidden">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center gap-3">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Gerando Pix...</p>
               </div>
-              <p className="text-[10px] text-background/50 font-medium">QR Code Pix</p>
-            </div>
+            ) : qrCode ? (
+              <img
+                src={`data:image/png;base64,${qrCode}`}
+                alt="Pix QR Code"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="text-center p-4">
+                <p className="text-[10px] text-destructive font-bold uppercase">Falha ao carregar QR Code</p>
+              </div>
+            )}
           </div>
 
           {/* Amount */}
           <div className="text-center">
             <p className="text-muted-foreground text-xs font-medium">Valor a pagar</p>
-            <p className="text-3xl font-display font-bold text-foreground mt-1">R$ 19,90</p>
+            <p className="text-3xl font-display font-bold text-foreground mt-1">
+              R$ {planPrice?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
           </div>
 
           {/* Copy Paste */}
