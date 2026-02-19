@@ -2,9 +2,6 @@ version: '3.8'
 
 services:
   dashboard:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: pixautomatico-dashboard:latest
     deploy:
       replicas: 1
