@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, AlertCircle, Loader2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,28 +6,59 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const Withdrawal = () => {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
   const [amount, setAmount] = useState("");
   const [pixKey, setPixKey] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const numericAmount = parseFloat(amount.replace(",", ".")) || 0;
-  const isValid = numericAmount >= 50 && pixKey.trim().length > 0;
+  useEffect(() => {
+    if (!user) return;
+    const fetchProfile = async () => {
+      const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
+      if (data) setProfile(data);
+    };
+    fetchProfile();
+  }, [user]);
 
-  const handleWithdraw = () => {
+  const numericAmount = parseFloat(amount.replace(",", ".")) || 0;
+  const isValid = numericAmount >= 50 && pixKey.trim().length > 0 && (profile?.saldo || 0) >= (numericAmount + 4.90);
+
+  const handleWithdraw = async () => {
     if (!isValid) return;
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('cashout-process', {
+        body: {
+          amount: numericAmount,
+          pixKey: pixKey,
+          pixKeyType: 'RANDOM' // Default or based on logic
+        }
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Saque solicitado!",
-        description: `Saque de R$ ${amount} enviado para sua chave Pix.`,
+        description: `Saque de R$ ${numericAmount.toFixed(2)} processado com sucesso.`,
       });
       navigate("/dashboard");
-    }, 2000);
+    } catch (err: any) {
+      toast({
+        title: "Erro no saque",
+        description: err.message || "Não foi possível processar seu saque.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,7 +82,9 @@ const Withdrawal = () => {
           className="card-elevated p-5 text-center"
         >
           <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Saldo Disponível</p>
-          <p className="text-3xl font-display font-bold text-foreground mt-2">R$ 127,40</p>
+          <p className="text-3xl font-display font-bold text-foreground mt-2">
+            R$ {profile?.saldo?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || "0,00"}
+          </p>
         </motion.div>
 
         {/* Amount Input */}

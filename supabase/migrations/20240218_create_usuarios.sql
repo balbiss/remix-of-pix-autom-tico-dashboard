@@ -18,16 +18,35 @@ ALTER TABLE public.usuarios ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own record" ON public.usuarios
   FOR SELECT USING (auth.uid() = id);
 
--- Trigger to automatically create a user record on Auth signup
+-- Trigger to automatically create a user record on Auth signup with referral logic
 CREATE OR REPLACE FUNCTION public.handle_new_usuario()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_padrinho_id UUID;
+  v_avo_id UUID;
 BEGIN
+  -- Get padrinho_id from metadata (passed during signup)
+  v_padrinho_id := (NEW.raw_user_meta_data ->> 'referral_code')::UUID;
+  
+  -- If padrinho exists, find their padrinho to set as avo (Level 2)
+  IF v_padrinho_id IS NOT NULL THEN
+    SELECT padrinho_id INTO v_avo_id FROM public.usuarios WHERE id = v_padrinho_id;
+  END IF;
+
+  INSERT INTO public.usuarios (id, email, padrinho_id, avo_id)
+  VALUES (NEW.id, NEW.email, v_padrinho_id, v_avo_id);
+  
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  -- Fallback if UUID conversion fails or other issues
   INSERT INTO public.usuarios (id, email)
   VALUES (NEW.id, NEW.email);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Recreate trigger (ensure it's clean)
+DROP TRIGGER IF EXISTS on_auth_user_created_usuarios ON auth.users;
 CREATE TRIGGER on_auth_user_created_usuarios
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_usuario();

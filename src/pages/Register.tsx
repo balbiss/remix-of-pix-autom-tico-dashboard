@@ -21,6 +21,13 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
+  useEffect(() => {
+    const savedRef = localStorage.getItem("referral_code");
+    if (savedRef) {
+      setReferralCode(savedRef);
+    }
+  }, []);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 

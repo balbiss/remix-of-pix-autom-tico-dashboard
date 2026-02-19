@@ -7,19 +7,55 @@ import { useToast } from "@/hooks/use-toast";
 interface CheckoutModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  planId?: string;
+  planName?: string;
+  planPrice?: number;
 }
 
-const CheckoutModal = ({ open, onOpenChange }: CheckoutModalProps) => {
+const CheckoutModal = ({ open, onOpenChange, planId, planName, planPrice }: CheckoutModalProps) => {
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState(15 * 60);
+  const [pixCode, setPixCode] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const pixCode = "00020126580014br.gov.bcb.pix0136example-pix-key-placeholder5204000053039865802BR5925PIX AUTOMATICO LTDA6009SAO PAULO62070503***6304ABCD";
 
   useEffect(() => {
     if (!open) {
       setTimeLeft(15 * 60);
+      setPixCode("");
+      setQrCode("");
       return;
     }
+
+    const loadCharge = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('create-charge', {
+          body: { amount: planPrice, planId: planId }
+        });
+
+        if (error) throw error;
+
+        // Adjust these fields based on the actual SyncPay response structure
+        // Usually it's something like { payload: "0002...", qrcode_base64: "..." }
+        setPixCode(data.payload || data.brcode || "");
+        setQrCode(data.qrcode_base64 || "");
+
+      } catch (err: any) {
+        toast({
+          title: "Erro ao gerar Pix",
+          description: err.message || "Tente novamente mais tarde.",
+          variant: "destructive"
+        });
+        onOpenChange(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCharge();
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -32,12 +68,13 @@ const CheckoutModal = ({ open, onOpenChange }: CheckoutModalProps) => {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [open, onOpenChange, toast]);
+  }, [open, onOpenChange, toast, planId, planPrice]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
   const handleCopy = () => {
+    if (!pixCode) return;
     navigator.clipboard.writeText(pixCode);
     setCopied(true);
     toast({ title: "Código copiado!", description: "Cole no seu app do banco para pagar." });
@@ -71,11 +108,10 @@ const CheckoutModal = ({ open, onOpenChange }: CheckoutModalProps) => {
                 {Array.from({ length: 25 }).map((_, i) => (
                   <div
                     key={i}
-                    className={`w-5 h-5 rounded-sm ${
-                      [0, 1, 2, 4, 5, 6, 10, 12, 14, 18, 19, 20, 22, 23, 24].includes(i)
+                    className={`w-5 h-5 rounded-sm ${[0, 1, 2, 4, 5, 6, 10, 12, 14, 18, 19, 20, 22, 23, 24].includes(i)
                         ? "bg-background"
                         : "bg-foreground"
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
