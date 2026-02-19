@@ -142,7 +142,7 @@ const Dashboard = () => {
       <header className="flex items-center justify-between px-5 pt-4 pb-5">
         <div>
           <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Bem-vindo de volta 👋</p>
-          <h1 className="text-xl font-display font-bold text-foreground mt-0.5">Pix Automático</h1>
+          <h1 className="text-xl font-display font-bold text-foreground mt-0.5">Pix Automático <span className="text-[10px] opacity-30">V2.0</span></h1>
         </div>
         <div className="h-11 w-11 rounded-2xl bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow-glow uppercase">
           {user?.email?.[0]}
@@ -154,7 +154,7 @@ const Dashboard = () => {
           <div className="relative z-10 text-primary-foreground">
             <span className="text-xs font-bold opacity-70 uppercase tracking-widest">Saldo Disponível</span>
             <h2 className="text-[2.5rem] font-display font-bold leading-none mt-2">
-              R$ {profile?.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {(profile?.saldo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h2>
             <Button onClick={() => navigate("/saque")} size="sm" className="mt-6 bg-white/20 hover:bg-white/30 border-0 rounded-xl h-10 px-5">Sacar Agora</Button>
           </div>
